@@ -72,10 +72,10 @@ body::after {
 /* The paper that feeds up through the platen */
 .paper-window {
   position: absolute;
-  /* tweak these to align with YOUR typewriter image's platen slot */
-  left: 22%;
-  right: 22%;
-  bottom: 37%;   /* distance from bottom of image to platen line */
+  /* paper slot sits at ~76% down the image, so bottom = 24% from image bottom */
+  left: 19%;
+  right: 19%;
+  bottom: 24%;
   top: 0;
   overflow: hidden;
   z-index: 5;
@@ -151,7 +151,7 @@ body::after {
 /* key flash */
 .key-flash {
   position: absolute;
-  bottom: 39%; left: 50%;
+  bottom: 26%; left: 50%;
   transform: translateX(-50%);
   font-family: 'Special Elite', cursive;
   font-size: .7rem;
