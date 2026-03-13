@@ -94,10 +94,11 @@ body::after {
   background-repeat: no-repeat;
   background-position: top center;
   box-shadow: 0 -4px 14px rgba(0,0,0,.2);
-  transition: transform .15s cubic-bezier(.25,.46,.45,.94);
+  /* snappy per-char micro-feed */
+  transition: transform .06s linear;
   height: 420%;
-  /* start fully below the slot */
-  transform: translateY(100%);
+  /* start with top 10% visible at bottom of slot */
+  transform: translateY(90%);
 }
 
 /* Typed text — anchored to the bottom of the slot (the platen line).
@@ -623,12 +624,28 @@ function renderText() {
   document.getElementById('lineCounter').textContent =
     lines <= 1 ? 'tap anywhere to begin' : 'line ' + lines;
 
-  // Paper starts fully hidden below the slot.
-  // Each new line pulls it up by LINE_H px — emerges from the platen slot.
-  const areaH  = area.offsetHeight || 200;
-  const paperH = bg.offsetHeight   || (areaH * 4.2);
-  const shift  = lines * LINE_H;
-  bg.style.transform = `translateY(${paperH - shift}px)`;
+  const paperH = bg.offsetHeight || 800;
+
+  // --- Per-character micro-feed ---
+  // Completed lines shift the paper by full LINE_H each.
+  // Characters on the current (incomplete) line shift it fractionally.
+  const completedLines = lines - 1;
+  const currentLineText = fullText.split('\n').at(-1) || '';
+  const charFraction = (currentLineText.length % CHARS_PER_LINE) / CHARS_PER_LINE;
+  const subLineShift = charFraction * LINE_H;
+  const totalShift = (completedLines * LINE_H) + subLineShift;
+
+  // --- Letter-writing zone offset ---
+  // lovepaper.jpg has ~38% decorative header before the writable area.
+  // We want typing to start in that writable zone, not at the top of the image.
+  // So we pre-offset the paper so the writable area starts at the platen line.
+  // paperH * 0.38 pushes the header above the slot on first keystroke.
+  const letterZoneOffset = paperH * 0.38;
+
+  // Initial state: top 10% of sheet visible (paperH * 0.90 translateY).
+  // As we type, paper rises by totalShift from that base.
+  const baseHidden = paperH * 0.90;
+  bg.style.transform = `translateY(${baseHidden - letterZoneOffset - totalShift}px)`;
 }
 
 function countLines(text) {
