@@ -10,9 +10,9 @@
 html, body { height:100%; overflow-x:hidden; }
 :root {
   --ink: #1a1008;
-  --paper: #f5f0e8;
   --rose: #8b2020;
   --gold: #c8a050;
+  --tw-start: 75.4%;  /* where typewriter body starts in the PNG */
 }
 
 body {
@@ -22,276 +22,244 @@ body {
     repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(0,0,0,.013) 80px, rgba(0,0,0,.013) 81px),
     repeating-linear-gradient(0deg,  transparent, transparent 80px, rgba(0,0,0,.013) 80px, rgba(0,0,0,.013) 81px);
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: flex; flex-direction: column; align-items: center;
 }
-
-/* grain */
 body::after {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:999;
-  opacity:.038;
+  opacity:.035;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 180px;
+  background-size:180px;
 }
 
 .scene { width:100%; display:flex; flex-direction:column; align-items:center; }
 .scene.off { display:none; }
 
-/* ─────────────────────────────
+/* ══════════════════════════════════
    WRITING SCENE
-───────────────────────────── */
-#writing { padding: 2rem 1rem 4rem; }
+══════════════════════════════════ */
+#writing { padding: 1.5rem 1rem 3rem; }
 
 .writing-title {
   font-family: 'Dancing Script', cursive;
-  font-size: 1.8rem;
-  color: #4a3828;
-  letter-spacing: .05em;
-  margin-bottom: 1.6rem;
-  opacity: .75;
-  text-align: center;
+  font-size: 1.8rem; color: #4a3828;
+  letter-spacing:.05em; margin-bottom: 1.2rem;
+  opacity:.75; text-align:center;
   animation: fadeDown .8s ease both;
 }
-@keyframes fadeDown {
-  from { opacity:0; transform:translateY(-12px); }
-  to   { opacity:.75; transform:translateY(0); }
-}
+@keyframes fadeDown { from{opacity:0;transform:translateY(-12px)} to{opacity:.75;transform:translateY(0)} }
 
-/* ── TYPEWRITER COMPOSITE ── */
+/* ── THE COMPOSITE ── */
+/*
+  Layout concept:
+  ┌──────────────────────────┐
+  │   PAPER (scrolls up)     │  <- top 75.4% of the composite height
+  │                          │
+  ├──────────────────────────┤  <- platen slot line
+  │  TYPEWRITER PNG (fixed)  │  <- bottom 24.6%
+  └──────────────────────────┘
+
+  We give .tw-wrap a fixed height. The paper sits as a block
+  above the typewriter image. The typewriter PNG overlaps the
+  very bottom of the paper area (platen slot eats the paper).
+*/
 .tw-wrap {
   position: relative;
-  width: min(500px, 95vw);
+  width: min(420px, 94vw);
   animation: riseIn .9s cubic-bezier(.22,1,.36,1) .2s both;
 }
-@keyframes riseIn {
-  from { opacity:0; transform:translateY(28px); }
-  to   { opacity:1; transform:translateY(0); }
-}
+@keyframes riseIn { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
 
-/* The paper that feeds up through the platen */
-.paper-window {
-  position: absolute;
-  /* paper slot sits at ~76% down the image, so bottom = 24% from image bottom */
-  left: 19%;
-  right: 19%;
-  bottom: 24%;
-  top: 0;
+/* Paper area — sits on top, typewriter overlaps bottom of it */
+.paper-area {
+  position: relative;
+  width: 100%;
+  /* height is set by JS to match the typewriter image's proportional paper zone */
+  background: transparent;
   overflow: hidden;
-  z-index: 5;
-  pointer-events: none;
+  /* bottom of paper-area aligns with typewriter platen slot */
 }
 
+/* Inner strip — anchored to bottom, grows upward */
 .paper-strip {
   position: absolute;
-  bottom: 0;           /* paper anchors at the platen */
-  left: 0; right: 0;
-  background: #f5f0e2;
+  bottom: 0; left: 0; right: 0;
+  /* paper colour matching lovepaper bg */
+  background: #f7f2e8;
   background-image: repeating-linear-gradient(
-    0deg,
-    transparent, transparent 23px,
-    rgba(160,140,100,.15) 23px, rgba(160,140,100,.15) 24px
+    0deg, transparent, transparent 23px,
+    rgba(150,130,100,.13) 23px, rgba(150,130,100,.13) 24px
   );
-  box-shadow: 1px 0 0 rgba(0,0,0,.06), -1px 0 0 rgba(0,0,0,.06), 0 -3px 12px rgba(0,0,0,.1);
-  padding: 6px 10px 4px 12px;
-  /* height grows as lines are added */
+  box-shadow: 2px 0 0 rgba(0,0,0,.05), -2px 0 0 rgba(0,0,0,.05), 0 -4px 16px rgba(0,0,0,.08);
+  padding: 8px 14px 4px 16px;
   min-height: 40px;
   transition: transform .1s cubic-bezier(.25,.46,.45,.94);
+  /* subtle paper edges */
+  border-left: 1px solid rgba(180,160,120,.2);
+  border-right: 1px solid rgba(180,160,120,.2);
 }
-
-/* slight perspective tilt to match typewriter angle */
-.paper-strip { transform-origin: bottom center; }
 
 .paper-text {
   font-family: 'Special Elite', cursive;
-  font-size: .8rem;
+  font-size: .82rem;
   line-height: 24px;
   color: #1a1008;
   white-space: pre-wrap;
   word-break: break-word;
 }
-
 .paper-cursor {
   display: inline-block;
   width: 8px; height: 2px;
   background: #1a1008;
   vertical-align: baseline;
-  margin-bottom: 2px;
-  margin-left: 1px;
+  margin-bottom: 3px; margin-left: 1px;
   animation: blink .7s step-end infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-/* typewriter image on top */
+/* Typewriter PNG — layered on top of paper-area's bottom */
 .tw-img {
-  width: 100%;
   display: block;
+  width: 100%;
   position: relative;
   z-index: 10;
   pointer-events: none;
-  filter: drop-shadow(0 18px 38px rgba(0,0,0,.28));
+  filter: drop-shadow(0 16px 36px rgba(0,0,0,.3));
+  /* pull it up to overlap the paper-area */
+  margin-top: -2px;
 }
 
-/* invisible click zone over keyboard */
+/* invisible tap/click zone over keyboard */
 .keyboard-zone {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 37%;
+  height: 32%;
   z-index: 20;
   cursor: text;
 }
 
-.hidden-input {
-  position: absolute; opacity:0;
-  width:1px; height:1px;
-  top:50%; left:50%;
-  pointer-events:none;
+/* ── REAL INPUT for mobile ──
+   We use a visible textarea styled to be invisible,
+   positioned over the paper area so mobile keyboard triggers on tap */
+.real-input {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 32%;
+  opacity: 0;
+  z-index: 15;
+  resize: none;
+  border: none; outline: none;
+  background: transparent;
+  font-size: 16px; /* prevents iOS zoom */
+  -webkit-appearance: none;
+  cursor: text;
 }
 
 /* key flash */
 .key-flash {
   position: absolute;
-  bottom: 26%; left: 50%;
-  transform: translateX(-50%);
-  font-family: 'Special Elite', cursive;
-  font-size: .7rem;
-  color: rgba(255,255,255,.9);
-  background: rgba(70,100,130,.65);
-  padding: .12rem .45rem;
-  border-radius: 3px;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 30;
-  transition: opacity .07s;
-  letter-spacing: .05em;
+  bottom: 33%; left: 50%; transform: translateX(-50%);
+  font-family: 'Special Elite', cursive; font-size: .65rem;
+  color: rgba(255,255,255,.9); background: rgba(70,100,130,.6);
+  padding: .1rem .4rem; border-radius: 3px;
+  opacity: 0; pointer-events:none; z-index:30;
+  transition: opacity .06s; letter-spacing:.05em;
 }
-.key-flash.show { opacity: 1; }
-
+.key-flash.show { opacity:1; }
 .return-flash {
   position: absolute;
-  top: 35%; right: 3%;
-  font-family: 'Special Elite', cursive;
-  font-size: .52rem;
-  color: rgba(255,255,255,.75);
-  background: rgba(50,70,90,.6);
-  padding: .1rem .38rem;
-  border-radius: 2px;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 30;
-  transition: opacity .09s;
+  top: 36%; right: 3%;
+  font-family: 'Special Elite', cursive; font-size: .5rem;
+  color: rgba(255,255,255,.7); background: rgba(50,70,90,.55);
+  padding: .08rem .35rem; border-radius: 2px;
+  opacity:0; pointer-events:none; z-index:30; transition: opacity .08s;
 }
-.return-flash.show { opacity: 1; }
+.return-flash.show { opacity:1; }
 
 /* line counter */
 .line-counter {
-  font-family: 'Special Elite', cursive;
-  font-size: .6rem;
-  color: rgba(80,65,55,.45);
-  letter-spacing: .18em;
-  text-align: center;
-  margin-top: .6rem;
+  font-family: 'Special Elite', cursive; font-size:.6rem;
+  color: rgba(80,65,55,.4); letter-spacing:.18em;
+  text-align:center; margin-top:.5rem;
 }
 
 /* controls */
 .controls-bar {
-  margin-top: 1.4rem;
-  display: flex; gap: .8rem; justify-content: center; flex-wrap: wrap;
+  margin-top: 1.2rem;
+  display:flex; gap:.8rem; justify-content:center; flex-wrap:wrap;
   animation: riseIn .9s cubic-bezier(.22,1,.36,1) .5s both;
 }
 .ctrl-btn {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: .95rem;
-  letter-spacing: .1em;
-  padding: .55rem 1.6rem;
-  border-radius: 2px;
-  cursor: pointer;
-  transition: all .28s cubic-bezier(.22,1,.36,1);
-  border: 1px solid;
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:.95rem; letter-spacing:.1em;
+  padding:.55rem 1.6rem; border-radius:2px; cursor:pointer;
+  transition:all .28s cubic-bezier(.22,1,.36,1); border:1px solid;
+  -webkit-tap-highlight-color: transparent;
 }
 .ctrl-btn.primary {
-  background: linear-gradient(135deg, #6a90a8, #4a6878);
-  color: #f0f5f8;
-  border-color: rgba(150,190,220,.4);
-  box-shadow: 0 4px 18px rgba(80,120,150,.3);
+  background:linear-gradient(135deg,#6a90a8,#4a6878);
+  color:#f0f5f8; border-color:rgba(150,190,220,.4);
+  box-shadow:0 4px 18px rgba(80,120,150,.3);
 }
 .ctrl-btn.primary:hover { transform:translateY(-1px); box-shadow:0 6px 24px rgba(80,120,150,.45); }
 .ctrl-btn.ghost {
-  background: transparent;
-  color: #5a7888;
-  border-color: rgba(90,120,140,.3);
+  background:transparent; color:#5a7888; border-color:rgba(90,120,140,.3);
 }
-.ctrl-btn.ghost:hover { background: rgba(90,120,140,.09); }
-.ctrl-btn:active { transform: scale(.97); }
+.ctrl-btn.ghost:hover { background:rgba(90,120,140,.09); }
+.ctrl-btn:active { transform:scale(.97); }
 
-/* ─────────────────────────────
+/* ══════════════════════════════════
    SEAL PICKER
-───────────────────────────── */
+══════════════════════════════════ */
 #sealPicker {
-  position: fixed; inset:0; z-index:200;
-  background: rgba(14,8,4,.83);
-  backdrop-filter: blur(8px) saturate(.7);
-  display: none; align-items:center; justify-content:center;
+  position:fixed; inset:0; z-index:200;
+  background:rgba(14,8,4,.83); backdrop-filter:blur(8px) saturate(.7);
+  display:none; align-items:center; justify-content:center;
   opacity:0; transition:opacity .35s ease;
 }
 #sealPicker.active { display:flex; opacity:1; }
-
 .seal-modal {
-  width: min(400px,92vw);
-  background: linear-gradient(160deg,#fdf6e8,#f5e8d0);
-  text-align: center;
-  padding: 2.4rem 2rem 2rem;
-  box-shadow: 0 28px 70px rgba(0,0,0,.5);
-  border: 1px solid rgba(200,80,80,.15);
-  animation: modalRise .45s cubic-bezier(.22,1,.36,1) both;
+  width:min(400px,92vw);
+  background:linear-gradient(160deg,#fdf6e8,#f5e8d0);
+  text-align:center; padding:2.2rem 1.8rem 1.8rem;
+  box-shadow:0 28px 70px rgba(0,0,0,.5);
+  border:1px solid rgba(200,80,80,.15);
+  animation:modalRise .45s cubic-bezier(.22,1,.36,1) both;
 }
-@keyframes modalRise {
-  from { opacity:0; transform:translateY(36px) scale(.96); }
-  to   { opacity:1; transform:translateY(0) scale(1); }
-}
+@keyframes modalRise { from{opacity:0;transform:translateY(36px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)} }
 .seal-title { font-family:'Dancing Script',cursive; font-size:2.2rem; color:var(--rose); margin-bottom:.15rem; }
-.seal-sub   { font-family:'IM Fell English',serif; font-style:italic; font-size:.75rem; color:var(--rose); opacity:.6; letter-spacing:.15em; margin-bottom:1.2rem; }
-.divider    { height:1px; background:linear-gradient(90deg,transparent,rgba(180,60,60,.25),transparent); margin-bottom:1.2rem; }
-.seal-options { display:grid; grid-template-columns:repeat(4,1fr); gap:.55rem; margin-bottom:1.2rem; }
-.seal-opt {
-  border:2px solid transparent; border-radius:7px;
-  padding:.6rem .2rem; cursor:pointer;
-  transition:all .22s cubic-bezier(.22,1,.36,1);
-  background:rgba(255,255,255,.6);
-}
-.seal-opt:hover   { border-color:#e87878; transform:translateY(-3px) scale(1.05); box-shadow:0 5px 16px rgba(200,80,80,.2); }
+.seal-sub { font-family:'IM Fell English',serif; font-style:italic; font-size:.75rem; color:var(--rose); opacity:.6; letter-spacing:.15em; margin-bottom:1.1rem; }
+.divider { height:1px; background:linear-gradient(90deg,transparent,rgba(180,60,60,.25),transparent); margin-bottom:1.1rem; }
+.seal-options { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; margin-bottom:1.1rem; }
+.seal-opt { border:2px solid transparent; border-radius:7px; padding:.55rem .2rem; cursor:pointer; transition:all .22s cubic-bezier(.22,1,.36,1); background:rgba(255,255,255,.6); -webkit-tap-highlight-color:transparent; }
+.seal-opt:hover   { border-color:#e87878; transform:translateY(-3px) scale(1.05); }
 .seal-opt.selected { border-color:var(--rose); background:rgba(220,150,150,.18); }
 .seal-emoji { font-size:1.7rem; display:block; margin-bottom:.2rem; }
 .seal-label { font-family:'IM Fell English',serif; font-size:.57rem; color:var(--rose); font-style:italic; }
-.recipient-wrap  { margin-bottom:1.2rem; }
-.recipient-label { font-family:'Dancing Script',cursive; font-size:.95rem; color:var(--rose); opacity:.65; display:block; margin-bottom:.35rem; }
+.recipient-wrap { margin-bottom:1.1rem; }
+.recipient-label { font-family:'Dancing Script',cursive; font-size:.95rem; color:var(--rose); opacity:.65; display:block; margin-bottom:.3rem; }
 .recipient-input {
-  background:transparent; border:none;
-  border-bottom:1.5px solid rgba(180,60,60,.35);
-  padding:.28rem .5rem;
-  font-family:'Special Elite',cursive; font-size:.88rem; color:var(--ink);
-  text-align:center; width:200px; outline:none;
-  transition:border-color .3s;
+  background:transparent; border:none; border-bottom:1.5px solid rgba(180,60,60,.35);
+  padding:.28rem .5rem; font-family:'Special Elite',cursive;
+  font-size:16px; /* no zoom on iOS */ color:var(--ink);
+  text-align:center; width:200px; outline:none; transition:border-color .3s;
 }
-.recipient-input:focus       { border-bottom-color:var(--rose); }
+.recipient-input:focus { border-bottom-color:var(--rose); }
 .recipient-input::placeholder { color:rgba(160,90,80,.35); font-style:italic; }
-.modal-actions { display:flex; flex-direction:column; gap:.55rem; align-items:center; }
+.modal-actions { display:flex; flex-direction:column; gap:.5rem; align-items:center; }
 .modal-btn {
   width:100%; max-width:240px;
   font-family:'IM Fell English',serif; font-style:italic;
-  font-size:.95rem; letter-spacing:.07em;
-  padding:.62rem 1.4rem; border-radius:2px; cursor:pointer;
-  transition:all .28s cubic-bezier(.22,1,.36,1); border:1.5px solid;
+  font-size:.95rem; letter-spacing:.07em; padding:.6rem 1.4rem; border-radius:2px;
+  cursor:pointer; transition:all .28s cubic-bezier(.22,1,.36,1); border:1.5px solid;
+  -webkit-tap-highlight-color:transparent;
 }
 .modal-btn.primary { background:linear-gradient(135deg,var(--rose),#6a1010); color:#fff; border-color:rgba(200,80,80,.4); box-shadow:0 4px 16px rgba(160,30,30,.3); }
 .modal-btn.primary:hover { transform:translateY(-2px); box-shadow:0 7px 24px rgba(160,30,30,.45); }
-.modal-btn.ghost  { background:transparent; color:var(--rose); border-color:rgba(180,60,60,.25); }
+.modal-btn.ghost { background:transparent; color:var(--rose); border-color:rgba(180,60,60,.25); }
 .modal-btn.ghost:hover { background:rgba(180,60,60,.06); }
 
-/* ─────────────────────────────
+/* ══════════════════════════════════
    SHIBA
-───────────────────────────── */
+══════════════════════════════════ */
 #shibaScene {
   position:fixed; inset:0; z-index:300;
   background:linear-gradient(160deg,#f8f0d8,#eedfc0,#e4d0a8);
@@ -300,7 +268,7 @@ body::after {
 #shibaScene.active { display:flex; }
 .shiba-stage { width:min(460px,88vw); height:200px; position:relative; overflow:hidden; margin-bottom:1.2rem; }
 .shiba-floor { position:absolute; bottom:16px; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(150,100,40,.2),transparent); }
-.shiba-ani   { position:absolute; bottom:20px; font-size:3.8rem; animation:shibaRun 2.8s cubic-bezier(.25,.46,.45,.94) forwards; filter:drop-shadow(3px 5px 8px rgba(0,0,0,.18)); }
+.shiba-ani { position:absolute; bottom:20px; font-size:3.8rem; animation:shibaRun 2.8s cubic-bezier(.25,.46,.45,.94) forwards; filter:drop-shadow(3px 5px 8px rgba(0,0,0,.18)); }
 @keyframes shibaRun {
   0%   { left:-80px; transform:scaleX(-1); }
   38%  { left:calc(50% - 32px); transform:scaleX(-1); }
@@ -310,15 +278,15 @@ body::after {
   80%  { left:calc(50% - 32px); transform:scaleX(-1) scale(1.06); }
   100% { left:calc(50% - 32px); transform:scaleX(-1) scale(1); }
 }
-.env-on-stage  { position:absolute; top:35%; right:16%; transform:translateY(-50%); font-size:3.2rem; filter:drop-shadow(2px 4px 8px rgba(0,0,0,.15)); }
+.env-on-stage  { position:absolute; top:35%; right:16%; transform:translateY(-50%); font-size:3.2rem; }
 .shiba-caption { font-family:'Dancing Script',cursive; font-size:1.4rem; color:var(--rose); opacity:0; animation:fadeIn .5s ease 2.2s forwards; text-align:center; }
 .shiba-caption.done { animation:popIn .4s cubic-bezier(.22,1,.36,1) forwards; }
 @keyframes popIn  { from{opacity:0;transform:scale(.8)} to{opacity:1;transform:scale(1)} }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-/* ─────────────────────────────
+/* ══════════════════════════════════
    ENVELOPE SCENE
-───────────────────────────── */
+══════════════════════════════════ */
 #envelopeScene {
   display:none; min-height:100vh; flex-direction:column;
   align-items:center; justify-content:center; padding:3rem 1rem;
@@ -328,11 +296,7 @@ body::after {
 #envelopeScene.active { display:flex; }
 .env-title { font-family:'Dancing Script',cursive; font-size:1.3rem; color:var(--rose); opacity:.55; letter-spacing:.1em; margin-bottom:2rem; animation:riseIn .7s ease forwards; }
 .envelope-wrap { perspective:1000px; margin-bottom:2.2rem; cursor:pointer; animation:riseIn .9s cubic-bezier(.22,1,.36,1) .1s both; }
-.envelope {
-  width:min(360px,84vw); position:relative;
-  transition:transform .5s cubic-bezier(.22,1,.36,1),filter .3s;
-  filter:drop-shadow(0 14px 36px rgba(0,0,0,.2));
-}
+.envelope { width:min(360px,84vw); position:relative; transition:transform .5s cubic-bezier(.22,1,.36,1),filter .3s; filter:drop-shadow(0 14px 36px rgba(0,0,0,.2)); }
 .envelope:hover { transform:translateY(-7px) rotateX(4deg) rotateZ(-1deg); filter:drop-shadow(0 22px 46px rgba(0,0,0,.28)); }
 .envelope.opening { animation:envOpen 1.1s cubic-bezier(.22,1,.36,1) forwards; }
 @keyframes envOpen {
@@ -341,18 +305,18 @@ body::after {
   70%  { transform:translateY(10px) scale(.95) rotateX(-3deg); opacity:.8; }
   100% { transform:translateY(80px) scale(.8) rotateX(15deg); opacity:0; }
 }
-.env-svg  { width:100%; height:auto; display:block; }
+.env-svg { width:100%; height:auto; display:block; }
 .env-address-overlay { position:absolute; bottom:19%; left:50%; transform:translateX(-50%); text-align:center; width:55%; pointer-events:none; }
 .addr-to   { font-family:'IM Fell English',serif; font-style:italic; font-size:.62rem; color:#6a3030; opacity:.5; letter-spacing:.12em; display:block; margin-bottom:.2rem; }
 .addr-name { font-family:'Special Elite',cursive; font-size:.76rem; color:#3a1818; opacity:.68; }
-.seal-sticker-overlay { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2.5rem; z-index:10; filter:drop-shadow(0 3px 8px rgba(0,0,0,.22)); transition:transform .3s cubic-bezier(.22,1,.36,1); pointer-events:none; }
+.seal-sticker-overlay { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2.5rem; z-index:10; filter:drop-shadow(0 3px 8px rgba(0,0,0,.22)); transition:transform .3s; pointer-events:none; }
 .envelope:hover .seal-sticker-overlay { transform:translate(-50%,-50%) scale(1.12) rotate(5deg); }
 .env-actions { display:flex; gap:.9rem; flex-wrap:wrap; justify-content:center; margin-bottom:1.4rem; animation:riseIn .7s ease .3s both; }
-.env-hint    { font-family:'IM Fell English',serif; font-style:italic; font-size:.78rem; color:#6a4830; opacity:.48; text-align:center; animation:riseIn .7s ease .5s both; }
+.env-hint { font-family:'IM Fell English',serif; font-style:italic; font-size:.78rem; color:#6a4830; opacity:.48; text-align:center; animation:riseIn .7s ease .5s both; }
 
-/* ─────────────────────────────
+/* ══════════════════════════════════
    READING SCENE
-───────────────────────────── */
+══════════════════════════════════ */
 #readingScene {
   display:none; min-height:100vh; flex-direction:column;
   align-items:center; justify-content:flex-start;
@@ -360,13 +324,11 @@ body::after {
   background:linear-gradient(160deg,#f0e8d8,#e8dcc8);
 }
 #readingScene.active { display:flex; }
-
 .letter-paper-wrap {
-  width: min(500px,90vw);
-  position: relative;
-  animation: pageUnfurl .9s cubic-bezier(.22,1,.36,1) forwards;
-  transform-origin: top center;
-  filter: drop-shadow(0 12px 36px rgba(0,0,0,.18));
+  width:min(500px,90vw); position:relative;
+  animation:pageUnfurl .9s cubic-bezier(.22,1,.36,1) forwards;
+  transform-origin:top center;
+  filter:drop-shadow(0 12px 36px rgba(0,0,0,.18));
 }
 @keyframes pageUnfurl {
   0%   { transform:scaleY(.01) rotateX(20deg); opacity:0; }
@@ -374,33 +336,19 @@ body::after {
   100% { transform:scaleY(1) rotateX(0deg); opacity:1; }
 }
 .letter-bg-img { width:100%; display:block; border-radius:2px; }
-
 .letter-text-overlay {
-  position: absolute;
-  top: 28%; left: 13%; right: 13%; bottom: 16%;
-  display: flex; flex-direction:column;
-  overflow: hidden;
+  position:absolute; top:28%; left:13%; right:13%; bottom:16%;
+  display:flex; flex-direction:column; overflow:hidden;
 }
-.letter-date-line {
-  font-family:'IM Fell English',serif; font-style:italic;
-  font-size:.68rem; color:#5a2020; opacity:.6;
-  text-align:right; margin-bottom:.7rem; letter-spacing:.05em;
-}
-.letter-body-text {
-  font-family:'Special Elite',cursive;
-  font-size:.8rem; line-height:26px;
-  color:#2a1010;
-  white-space:pre-wrap; word-break:break-word;
-  flex:1; overflow:hidden;
-}
+.letter-date-line { font-family:'IM Fell English',serif; font-style:italic; font-size:.68rem; color:#5a2020; opacity:.6; text-align:right; margin-bottom:.7rem; }
+.letter-body-text { font-family:'Special Elite',cursive; font-size:.8rem; line-height:26px; color:#2a1010; white-space:pre-wrap; word-break:break-word; flex:1; overflow:hidden; }
 .letter-seal-bottom { text-align:center; margin-top:.8rem; font-size:1.8rem; opacity:.5; animation:riseIn .5s ease 1.5s both; }
 .reading-back { margin-top:2rem; animation:riseIn .7s ease .5s both; }
 
 /* shared */
 @keyframes riseIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 .toast {
-  position:fixed; bottom:2.2rem; left:50%;
-  transform:translateX(-50%) translateY(80px);
+  position:fixed; bottom:2.2rem; left:50%; transform:translateX(-50%) translateY(80px);
   background:#1a1008; color:rgba(200,160,80,.9);
   font-family:'IM Fell English',serif; font-style:italic;
   padding:.65rem 1.8rem; border-radius:2px; font-size:.86rem; letter-spacing:.06em;
@@ -418,8 +366,8 @@ body::after {
 
   <div class="tw-wrap" id="twWrap">
 
-    <!-- Paper feeds UP through this window -->
-    <div class="paper-window" id="paperWindow">
+    <!-- Paper area (above the typewriter, feeds upward) -->
+    <div class="paper-area" id="paperArea">
       <div class="paper-strip" id="paperStrip">
         <div class="paper-text" id="paperText">
           <span class="paper-cursor"></span>
@@ -427,21 +375,25 @@ body::after {
       </div>
     </div>
 
-    <!-- Typewriter illustration (layered on top) -->
-    <img class="tw-img" src="typewriter_clean.jpg" alt="typewriter">
+    <!-- Transparent PNG typewriter — sits on top, overlaps paper bottom -->
+    <img class="tw-img" id="twImg" src="typewriter.png" alt="typewriter"
+      onload="initLayout()">
 
     <!-- Key flash labels -->
-    <div class="key-flash"   id="keyFlash"></div>
-    <div class="return-flash" id="returnFlash">⏎ return</div>
+    <div class="key-flash"    id="keyFlash"></div>
+    <div class="return-flash" id="returnFlash">⏎</div>
 
-    <!-- Click anywhere on keyboard to focus -->
+    <!-- Transparent textarea covers paper area — triggers mobile keyboard -->
+    <textarea class="real-input" id="realInput"
+      autocomplete="off" autocorrect="off" autocapitalize="off"
+      spellcheck="false" inputmode="text"
+      placeholder=""></textarea>
+
+    <!-- Click zone over keyboard -->
     <div class="keyboard-zone" onclick="focusInput()"></div>
-
-    <input type="text" class="hidden-input" id="hiddenInput"
-      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
   </div>
 
-  <p class="line-counter" id="lineCounter">line 1</p>
+  <p class="line-counter" id="lineCounter">tap anywhere to begin</p>
 
   <div class="controls-bar">
     <button class="ctrl-btn ghost"   onclick="clearAll()">clear</button>
@@ -467,7 +419,8 @@ body::after {
     </div>
     <div class="recipient-wrap">
       <span class="recipient-label">addressed to —</span>
-      <input class="recipient-input" id="recipientInput" type="text" placeholder="their name…" maxlength="40">
+      <input class="recipient-input" id="recipientInput" type="text"
+        placeholder="their name…" maxlength="40" inputmode="text">
     </div>
     <div class="divider"></div>
     <div class="modal-actions">
@@ -501,7 +454,7 @@ body::after {
           </defs>
           <rect x="2" y="2" width="376" height="236" fill="url(#eb)" rx="4" stroke="#d4c4a4" stroke-width="1.5"/>
           <polygon points="2,240 190,130 378,240" fill="url(#efl)" opacity=".82"/>
-          <polygon points="2,2 2,240 132,130"    fill="url(#efl)" opacity=".88"/>
+          <polygon points="2,2 2,240 132,130" fill="url(#efl)" opacity=".88"/>
           <polygon points="378,2 378,240 248,130" fill="url(#efl)" opacity=".85"/>
           <polygon points="2,2 378,2 190,122" fill="url(#ef)"/>
           <polygon points="2,2 378,2 190,122" fill="none" stroke="#d4c4a4" stroke-width="1" opacity=".45"/>
@@ -516,7 +469,7 @@ body::after {
             <line x1="372" y1="2"   x2="372" y2="240" stroke="white"   stroke-width="2" stroke-dasharray="8,6" stroke-dashoffset="5"/>
           </g>
           <circle cx="316" cy="44" r="26" fill="none" stroke="#8a5040" stroke-width="1.5" opacity=".35"/>
-          <text x="316" y="40" font-size="6" text-anchor="middle" fill="#8a5040" opacity=".5"  font-family="serif">TOKYO</text>
+          <text x="316" y="40" font-size="6" text-anchor="middle" fill="#8a5040" opacity=".5" font-family="serif">TOKYO</text>
           <text x="316" y="48" font-size="5" text-anchor="middle" fill="#8a5040" opacity=".45" font-family="serif">JAPAN POST</text>
           <text x="316" y="56" font-size="6" text-anchor="middle" fill="#8a5040" opacity=".45" font-family="serif">2026</text>
           <rect x="278" y="14" width="28" height="36" fill="#d87090" rx="2" opacity=".68"/>
@@ -542,8 +495,8 @@ body::after {
   <div class="letter-paper-wrap">
     <img class="letter-bg-img" src="lovepaper.jpg" alt="letter paper">
     <div class="letter-text-overlay">
-      <div class="letter-date-line"  id="readingDate"></div>
-      <div class="letter-body-text"  id="readingBody"></div>
+      <div class="letter-date-line"   id="readingDate"></div>
+      <div class="letter-body-text"   id="readingBody"></div>
       <div class="letter-seal-bottom" id="readingSeal"></div>
     </div>
   </div>
@@ -553,110 +506,183 @@ body::after {
 <div class="toast" id="toast"></div>
 
 <script>
-let fullText    = '';
+// ─────────────────────────────────────────
+// State
+// ─────────────────────────────────────────
+let fullText     = '';
 let selectedSeal = '💌';
-const LINE_H     = 24;   // px — matches CSS line-height
-const CHARS_PER_LINE = 38; // approximate wrap width
+const LINE_H        = 24;   // px — matches CSS line-height on paper
+const CHARS_PER_LINE = 36;  // approx chars before line wraps
+// The typewriter PNG has machine body starting at 75.4% from top
+const TW_MACHINE_START = 0.754;
 
-// ── Audio ──────────────────────────────────────────────
+// ─────────────────────────────────────────
+// Layout: size paper-area to match the
+// transparent zone of the typewriter PNG
+// ─────────────────────────────────────────
+function initLayout() {
+  const img    = document.getElementById('twImg');
+  const wrap   = document.getElementById('twWrap');
+  const paper  = document.getElementById('paperArea');
+  const input  = document.getElementById('realInput');
+
+  const imgH   = img.offsetHeight || img.naturalHeight;
+  const paperH = Math.round(imgH * TW_MACHINE_START);
+
+  paper.style.height = paperH + 'px';
+  input.style.bottom = (imgH * (1 - TW_MACHINE_START)) + 'px';
+  input.style.height = paperH + 'px';
+}
+
+// Run on load and on resize
+window.addEventListener('resize', () => {
+  if (document.getElementById('twImg').complete) initLayout();
+});
+// Also try immediately in case image is cached
+window.addEventListener('load', initLayout);
+
+// ─────────────────────────────────────────
+// Audio
+// ─────────────────────────────────────────
 let audioCtx;
 function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 }
 function playClack() {
-  initAudio(); const now = audioCtx.currentTime;
-  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * .048, audioCtx.sampleRate);
+  initAudio(); const t = audioCtx.currentTime;
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*.048, audioCtx.sampleRate);
   const d = buf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/(audioCtx.sampleRate*.009));
   const src = audioCtx.createBufferSource(); src.buffer = buf;
-  const g = audioCtx.createGain(); g.gain.setValueAtTime(.16+Math.random()*.07, now); g.gain.exponentialRampToValueAtTime(.001, now+.048);
+  const g = audioCtx.createGain(); g.gain.setValueAtTime(.16+Math.random()*.07,t); g.gain.exponentialRampToValueAtTime(.001,t+.048);
   const f = audioCtx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1700+Math.random()*500; f.Q.value=.85;
-  src.connect(f); f.connect(g); g.connect(audioCtx.destination); src.start(now);
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination); src.start(t);
 }
 function playReturn() {
-  initAudio(); const now = audioCtx.currentTime;
-  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * .22, audioCtx.sampleRate);
+  initAudio(); const t = audioCtx.currentTime;
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*.22, audioCtx.sampleRate);
   const d = buf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/(audioCtx.sampleRate*.08)) * .55;
   const src = audioCtx.createBufferSource(); src.buffer = buf;
-  const g = audioCtx.createGain(); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now+.22);
+  const g = audioCtx.createGain(); g.gain.setValueAtTime(.3,t); g.gain.exponentialRampToValueAtTime(.001,t+.22);
   const f = audioCtx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800;
-  src.connect(f); f.connect(g); g.connect(audioCtx.destination); src.start(now);
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination); src.start(t);
 }
 function playBell() {
-  initAudio(); const now = audioCtx.currentTime;
+  initAudio(); const t = audioCtx.currentTime;
   const osc = audioCtx.createOscillator();
   const g   = audioCtx.createGain();
-  osc.frequency.setValueAtTime(2200, now);
-  osc.frequency.exponentialRampToValueAtTime(1800, now+.12);
-  g.gain.setValueAtTime(.18, now); g.gain.exponentialRampToValueAtTime(.001, now+.35);
-  osc.connect(g); g.connect(audioCtx.destination);
-  osc.start(now); osc.stop(now+.35);
+  osc.frequency.setValueAtTime(2200,t); osc.frequency.exponentialRampToValueAtTime(1800,t+.12);
+  g.gain.setValueAtTime(.18,t); g.gain.exponentialRampToValueAtTime(.001,t+.35);
+  osc.connect(g); g.connect(audioCtx.destination); osc.start(t); osc.stop(t+.35);
 }
 
-// ── Typing ─────────────────────────────────────────────
-function focusInput() { document.getElementById('hiddenInput').focus(); }
-setTimeout(focusInput, 400);
+// ─────────────────────────────────────────
+// Input — textarea approach works on mobile
+// We sync the textarea's value → fullText on every input event
+// ─────────────────────────────────────────
+function focusInput() {
+  document.getElementById('realInput').focus();
+}
+setTimeout(focusInput, 500);
 
-document.getElementById('hiddenInput').addEventListener('keydown', e => {
+const ta = document.getElementById('realInput');
+
+// The textarea value IS the source of truth.
+// We intercept keydown for sounds, but use 'input' event for actual content sync
+// so mobile (which doesn't fire keydown for every char) also works.
+
+ta.addEventListener('keydown', e => {
   initAudio();
-  if (e.key === 'Backspace') {
-    if (fullText.length > 0) { fullText = fullText.slice(0,-1); playClack(); renderText(); }
-    e.preventDefault(); return;
-  }
   if (e.key === 'Enter') {
-    fullText += '\n'; playReturn(); showReturnFlash(); renderText();
-    e.preventDefault(); return;
-  }
-  if (e.key.length === 1) {
-    fullText += e.key; playClack(); flashKey(e.key); renderText();
-    // bell warning near line end
-    const lastLine = fullText.split('\n').at(-1);
+    playReturn(); showReturnFlash();
+  } else if (e.key === 'Backspace') {
+    playClack();
+  } else if (e.key === ' ' || e.key.length === 1) {
+    playClack();
+    flashKey(e.key === ' ' ? '␣' : e.key);
+    const lastLine = fullText.split('\n').at(-1) || '';
     if (lastLine.length === CHARS_PER_LINE - 4) playBell();
-    e.preventDefault();
   }
 });
 
+ta.addEventListener('input', () => {
+  // Sync textarea value to our display
+  const newText = ta.value;
+
+  // detect if a character was added (for sound on mobile)
+  if (newText.length > fullText.length) {
+    const added = newText.slice(fullText.length);
+    if (added !== '\n') { initAudio(); playClack(); flashKey(added.slice(-1)); }
+    else { initAudio(); playReturn(); showReturnFlash(); }
+  }
+
+  fullText = newText;
+  renderText();
+});
+
+// Keep textarea in sync if user pastes
+ta.addEventListener('paste', () => {
+  setTimeout(() => { fullText = ta.value; renderText(); }, 0);
+});
+
 function flashKey(k) {
+  if (!k || k === '\n') return;
   const el = document.getElementById('keyFlash');
   el.textContent = k.toUpperCase(); el.classList.add('show');
-  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 120);
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 130);
 }
 function showReturnFlash() {
   const el = document.getElementById('returnFlash');
   el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 300);
 }
 
-// ── Render: paper scrolls UP ───────────────────────────
+// ─────────────────────────────────────────
+// Render — paper scrolls UP
+// ─────────────────────────────────────────
 function renderText() {
   const pt    = document.getElementById('paperText');
   const strip = document.getElementById('paperStrip');
 
+  // render text + cursor
   pt.innerHTML = escHtml(fullText) + '<span class="paper-cursor"></span>';
 
   const lines = countLines(fullText);
-  document.getElementById('lineCounter').textContent = 'line ' + lines;
+  document.getElementById('lineCounter').textContent =
+    lines <= 1 ? 'line 1' : 'line ' + lines;
 
-  // each line pushes paper up by LINE_H px
+  // shift paper upward: each line pushes it up by LINE_H px
   const shift = Math.max(0, (lines - 1) * LINE_H);
-  strip.style.transform  = `translateY(-${shift}px)`;
   strip.style.paddingTop = (shift + 8) + 'px';
+  strip.style.transform  = `translateY(-${shift}px)`;
 }
 
 function countLines(text) {
   let total = 0;
   text.split('\n').forEach(line => {
-    total += Math.max(1, Math.ceil(line.length / CHARS_PER_LINE) || 1);
+    total += Math.max(1, Math.ceil((line.length || 1) / CHARS_PER_LINE));
   });
   return total;
 }
 
 function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  return s
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
 }
-function clearAll() { fullText = ''; renderText(); focusInput(); }
 
-// ── Seal picker ────────────────────────────────────────
+function clearAll() {
+  fullText = '';
+  ta.value = '';
+  renderText();
+  focusInput();
+}
+
+// ─────────────────────────────────────────
+// Seal picker
+// ─────────────────────────────────────────
 function openSealPicker() {
   if (!fullText.trim()) { showToast('write something first…'); return; }
   const p = document.getElementById('sealPicker');
@@ -675,16 +701,26 @@ document.getElementById('sealPicker').addEventListener('click', e => {
   if (e.target === document.getElementById('sealPicker')) closeSealPicker();
 });
 
-// ── Shiba ──────────────────────────────────────────────
+// ─────────────────────────────────────────
+// Shiba
+// ─────────────────────────────────────────
 function showShiba() {
   const sc = document.getElementById('shibaScene');
-  sc.style.display = 'flex'; sc.style.opacity = '0'; sc.style.transition = 'opacity .4s ease';
-  requestAnimationFrame(() => { sc.style.opacity = '1'; });
-  setTimeout(() => { const c = document.getElementById('shibaCaption'); c.textContent = '*lick* ✨ sealed!'; c.classList.add('done'); }, 2400);
-  setTimeout(() => { sc.style.opacity = '0'; setTimeout(() => { sc.style.display = 'none'; showEnvelope(); }, 400); }, 4000);
+  sc.style.display='flex'; sc.style.opacity='0'; sc.style.transition='opacity .4s ease';
+  requestAnimationFrame(() => { sc.style.opacity='1'; });
+  setTimeout(() => {
+    const c = document.getElementById('shibaCaption');
+    c.textContent='*lick* ✨ sealed!'; c.classList.add('done');
+  }, 2400);
+  setTimeout(() => {
+    sc.style.opacity='0';
+    setTimeout(() => { sc.style.display='none'; showEnvelope(); }, 400);
+  }, 4000);
 }
 
-// ── Envelope ───────────────────────────────────────────
+// ─────────────────────────────────────────
+// Envelope
+// ─────────────────────────────────────────
 function showEnvelope() {
   const r = document.getElementById('recipientInput').value.trim() || 'you';
   document.getElementById('sealSticker').textContent  = selectedSeal;
@@ -703,7 +739,9 @@ function openEnvelopeAnim() {
   }, 950);
 }
 
-// ── Reading ────────────────────────────────────────────
+// ─────────────────────────────────────────
+// Reading
+// ─────────────────────────────────────────
 function showReading(text, seal) {
   const now = new Date();
   const mo  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -715,7 +753,9 @@ function showReading(text, seal) {
   setTimeout(tn, 800);
 }
 
-// ── Share ──────────────────────────────────────────────
+// ─────────────────────────────────────────
+// Share
+// ─────────────────────────────────────────
 function shareLink() {
   const data = { t: fullText, s: selectedSeal, r: document.getElementById('recipientInput').value.trim() || 'you', d: new Date().toISOString() };
   const enc  = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
@@ -727,13 +767,15 @@ function writeAnother() {
     document.getElementById(id).classList.remove('active');
     document.getElementById(id).style.display = 'none';
   });
-  fullText = ''; renderText();
+  fullText = ''; ta.value = ''; renderText();
   document.getElementById('recipientInput').value = '';
   document.getElementById('writing').classList.remove('off');
   setTimeout(focusInput, 300);
 }
 
-// ── Shared letter from URL ─────────────────────────────
+// ─────────────────────────────────────────
+// Shared letter from URL
+// ─────────────────────────────────────────
 function checkSharedLetter() {
   const enc = new URLSearchParams(window.location.search).get('letter');
   if (!enc) return false;
@@ -765,7 +807,9 @@ function showToast(msg) {
   t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── Init ───────────────────────────────────────────────
+// ─────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────
 if (!checkSharedLetter()) document.getElementById('writing').classList.remove('off');
 renderText();
 </script>
