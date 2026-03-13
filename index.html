@@ -72,47 +72,51 @@ body::after {
   filter: drop-shadow(0 16px 36px rgba(0,0,0,.3));
 }
 
-/* Paper window — absolutely fills the transparent zone above the machine */
+/* Paper window — clips everything; only this slot is visible */
 .paper-area {
   position: absolute;
   top: 0;
-  left: 2%;   /* slight inset to align with paper slot edges */
-  right: 2%;
-  bottom: 24.59%;  /* = 100% - 75.41% */
+  left: 6%;
+  right: 6%;
+  bottom: 24.59%;
   overflow: hidden;
-  z-index: 5; /* behind the typewriter PNG */
+  z-index: 5;
   pointer-events: none;
 }
 
-/* Love-letter sheet used as the paper background */
+/* Love-letter sheet — starts FULLY HIDDEN below the slot.
+   JS moves it up by LINE_H px per line via translateY. */
 .paper-bg {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  /* image fills the slot, extends upward as paper scrolls */
   background-image: url('lovepaper.jpg');
   background-size: 100% auto;
   background-repeat: no-repeat;
-  background-position: bottom center;
-  /* shadow so it looks like paper emerging from slot */
-  box-shadow: 0 -3px 12px rgba(0,0,0,.12);
-  transition: transform .1s cubic-bezier(.25,.46,.45,.94);
-  /* tall enough to show the full letter sheet */
-  min-height: 200%;
+  background-position: top center;
+  box-shadow: 0 -4px 14px rgba(0,0,0,.2);
+  transition: transform .15s cubic-bezier(.25,.46,.45,.94);
+  height: 420%;
+  /* start fully below the slot */
+  transform: translateY(100%);
 }
 
-/* Typed text overlaid on the love-letter sheet */
+/* Typed text — anchored to the bottom of the slot (the platen line).
+   Grows upward as lines are added. NOT inside paper-bg. */
 .paper-text {
   position: absolute;
-  /* position text in the writeable area of the love-letter template:
-     roughly top-third is ornamental header, text starts below that */
-  top: 34%;
-  left: 13%; right: 12%;
+  bottom: 4px;
+  left: 10%; right: 10%;
   font-family: 'Special Elite', cursive;
-  font-size: .76rem;
+  font-size: .74rem;
   line-height: 24px;
   color: #2a1010;
   white-space: pre-wrap;
   word-break: break-word;
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 .paper-cursor {
   display: inline-block;
@@ -364,14 +368,13 @@ body::after {
     <!-- Typewriter PNG is in-flow: gives .tw-wrap its height -->
     <img class="tw-img" id="twImg" src="typewriter.png" alt="typewriter">
 
-    <!-- Paper area — absolutely positioned in the transparent zone above platen -->
+    <!-- Paper area — clips the slot; paper slides up behind typewriter -->
     <div class="paper-area" id="paperArea">
-      <!-- Love-letter sheet slides up as you type -->
-      <div class="paper-bg" id="paperBg">
-        <!-- Typed text sits in the writeable area of the template -->
-        <div class="paper-text" id="paperText">
-          <span class="paper-cursor"></span>
-        </div>
+      <!-- Love-letter sheet: starts hidden below, scrolls up per line -->
+      <div class="paper-bg" id="paperBg"></div>
+      <!-- Text is a sibling: fixed at the platen line, paper scrolls behind it -->
+      <div class="paper-text" id="paperText">
+        <span class="paper-cursor"></span>
       </div>
     </div>
 
@@ -576,14 +579,14 @@ ta.addEventListener('keydown', e => {
 });
 
 ta.addEventListener('input', () => {
-  // Sync textarea value to our display
+  // Always trust textarea as ground truth — no diffing desync
   const newText = ta.value;
 
-  // detect if a character was added (for sound on mobile)
+  // Sound detection for mobile (no keydown per char)
   if (newText.length > fullText.length) {
     const added = newText.slice(fullText.length);
-    if (added !== '\n') { initAudio(); playClack(); flashKey(added.slice(-1)); }
-    else { initAudio(); playReturn(); showReturnFlash(); }
+    if (added.includes('\n')) { initAudio(); playReturn(); showReturnFlash(); }
+    else { initAudio(); playClack(); flashKey(added.slice(-1)); }
   }
 
   fullText = newText;
@@ -610,18 +613,22 @@ function showReturnFlash() {
 // Render — love-letter sheet scrolls UP
 // ─────────────────────────────────────────
 function renderText() {
-  const pt  = document.getElementById('paperText');
-  const bg  = document.getElementById('paperBg');
+  const pt   = document.getElementById('paperText');
+  const bg   = document.getElementById('paperBg');
+  const area = document.getElementById('paperArea');
 
   pt.innerHTML = escHtml(fullText) + '<span class="paper-cursor"></span>';
 
   const lines = countLines(fullText);
   document.getElementById('lineCounter').textContent =
-    lines <= 1 ? 'tap to begin typing' : 'line ' + lines;
+    lines <= 1 ? 'tap anywhere to begin' : 'line ' + lines;
 
-  // Each new line slides the whole sheet UP by LINE_H px
-  const shift = Math.max(0, (lines - 1) * LINE_H);
-  bg.style.transform = `translateY(-${shift}px)`;
+  // Paper starts fully hidden below the slot.
+  // Each new line pulls it up by LINE_H px — emerges from the platen slot.
+  const areaH  = area.offsetHeight || 200;
+  const paperH = bg.offsetHeight   || (areaH * 4.2);
+  const shift  = lines * LINE_H;
+  bg.style.transform = `translateY(${paperH - shift}px)`;
 }
 
 function countLines(text) {
