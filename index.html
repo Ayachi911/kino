@@ -48,19 +48,12 @@ body::after {
 }
 @keyframes fadeDown { from{opacity:0;transform:translateY(-12px)} to{opacity:.75;transform:translateY(0)} }
 
-/* ── THE COMPOSITE ── */
-/*
-  Layout concept:
-  ┌──────────────────────────┐
-  │   PAPER (scrolls up)     │  <- top 75.4% of the composite height
-  │                          │
-  ├──────────────────────────┤  <- platen slot line
-  │  TYPEWRITER PNG (fixed)  │  <- bottom 24.6%
-  └──────────────────────────┘
-
-  We give .tw-wrap a fixed height. The paper sits as a block
-  above the typewriter image. The typewriter PNG overlaps the
-  very bottom of the paper area (platen slot eats the paper).
+/* ── THE COMPOSITE ──
+   .tw-wrap is sized by the image (natural aspect ratio).
+   Everything is absolutely positioned inside it.
+   Paper sits BEHIND the typewriter PNG, anchored to the platen line.
+   PNG is 406×614; machine body starts at y=463 = 75.41% from top.
+   So paper-area bottom edge = 75.41% from top of .tw-wrap.
 */
 .tw-wrap {
   position: relative;
@@ -69,80 +62,73 @@ body::after {
 }
 @keyframes riseIn { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
 
-/* Paper area — sits on top, typewriter overlaps bottom of it */
-.paper-area {
-  position: relative;
+/* Typewriter PNG — defines the height of .tw-wrap */
+.tw-img {
+  display: block;
   width: 100%;
-  /* height is set by JS to match the typewriter image's proportional paper zone */
-  background: transparent;
-  overflow: hidden;
-  /* bottom of paper-area aligns with typewriter platen slot */
+  position: relative;   /* in-flow so .tw-wrap gets its height from this */
+  z-index: 10;
+  pointer-events: none;
+  filter: drop-shadow(0 16px 36px rgba(0,0,0,.3));
 }
 
-/* Inner strip — anchored to bottom, grows upward */
-.paper-strip {
+/* Paper window — absolutely fills the transparent zone above the machine */
+.paper-area {
+  position: absolute;
+  top: 0;
+  left: 2%;   /* slight inset to align with paper slot edges */
+  right: 2%;
+  bottom: 24.59%;  /* = 100% - 75.41% */
+  overflow: hidden;
+  z-index: 5; /* behind the typewriter PNG */
+  pointer-events: none;
+}
+
+/* Love-letter sheet used as the paper background */
+.paper-bg {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  /* paper colour matching lovepaper bg */
-  background: #f7f2e8;
-  background-image: repeating-linear-gradient(
-    0deg, transparent, transparent 23px,
-    rgba(150,130,100,.13) 23px, rgba(150,130,100,.13) 24px
-  );
-  box-shadow: 2px 0 0 rgba(0,0,0,.05), -2px 0 0 rgba(0,0,0,.05), 0 -4px 16px rgba(0,0,0,.08);
-  padding: 8px 14px 4px 16px;
-  min-height: 40px;
+  /* image fills the slot, extends upward as paper scrolls */
+  background-image: url('lovepaper.jpg');
+  background-size: 100% auto;
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  /* shadow so it looks like paper emerging from slot */
+  box-shadow: 0 -3px 12px rgba(0,0,0,.12);
   transition: transform .1s cubic-bezier(.25,.46,.45,.94);
-  /* subtle paper edges */
-  border-left: 1px solid rgba(180,160,120,.2);
-  border-right: 1px solid rgba(180,160,120,.2);
+  /* tall enough to show the full letter sheet */
+  min-height: 200%;
 }
 
+/* Typed text overlaid on the love-letter sheet */
 .paper-text {
+  position: absolute;
+  /* position text in the writeable area of the love-letter template:
+     roughly top-third is ornamental header, text starts below that */
+  top: 34%;
+  left: 13%; right: 12%;
   font-family: 'Special Elite', cursive;
-  font-size: .82rem;
+  font-size: .76rem;
   line-height: 24px;
-  color: #1a1008;
+  color: #2a1010;
   white-space: pre-wrap;
   word-break: break-word;
 }
 .paper-cursor {
   display: inline-block;
   width: 8px; height: 2px;
-  background: #1a1008;
+  background: #2a1010;
   vertical-align: baseline;
   margin-bottom: 3px; margin-left: 1px;
   animation: blink .7s step-end infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-/* Typewriter PNG — layered on top of paper-area's bottom */
-.tw-img {
-  display: block;
-  width: 100%;
-  position: relative;
-  z-index: 10;
-  pointer-events: none;
-  filter: drop-shadow(0 16px 36px rgba(0,0,0,.3));
-  /* pull it up to overlap the paper-area */
-  margin-top: -2px;
-}
-
-/* invisible tap/click zone over keyboard */
-.keyboard-zone {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 32%;
-  z-index: 20;
-  cursor: text;
-}
-
-/* ── REAL INPUT for mobile ──
-   We use a visible textarea styled to be invisible,
-   positioned over the paper area so mobile keyboard triggers on tap */
+/* Invisible textarea — covers the paper area, triggers mobile keyboard */
 .real-input {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 32%;
+  top: 0; left: 0; right: 0;
+  bottom: 24.59%;
   opacity: 0;
   z-index: 15;
   resize: none;
@@ -153,10 +139,19 @@ body::after {
   cursor: text;
 }
 
+/* keyboard click zone (bottom portion = keyboard area of image) */
+.keyboard-zone {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 24%;
+  z-index: 20;
+  cursor: text;
+}
+
 /* key flash */
 .key-flash {
   position: absolute;
-  bottom: 33%; left: 50%; transform: translateX(-50%);
+  bottom: 26%; left: 50%; transform: translateX(-50%);
   font-family: 'Special Elite', cursive; font-size: .65rem;
   color: rgba(255,255,255,.9); background: rgba(70,100,130,.6);
   padding: .1rem .4rem; border-radius: 3px;
@@ -166,7 +161,7 @@ body::after {
 .key-flash.show { opacity:1; }
 .return-flash {
   position: absolute;
-  top: 36%; right: 3%;
+  bottom: 26%; right: 5%;
   font-family: 'Special Elite', cursive; font-size: .5rem;
   color: rgba(255,255,255,.7); background: rgba(50,70,90,.55);
   padding: .08rem .35rem; border-radius: 2px;
@@ -366,30 +361,31 @@ body::after {
 
   <div class="tw-wrap" id="twWrap">
 
-    <!-- Paper area (above the typewriter, feeds upward) -->
+    <!-- Typewriter PNG is in-flow: gives .tw-wrap its height -->
+    <img class="tw-img" id="twImg" src="typewriter.png" alt="typewriter">
+
+    <!-- Paper area — absolutely positioned in the transparent zone above platen -->
     <div class="paper-area" id="paperArea">
-      <div class="paper-strip" id="paperStrip">
+      <!-- Love-letter sheet slides up as you type -->
+      <div class="paper-bg" id="paperBg">
+        <!-- Typed text sits in the writeable area of the template -->
         <div class="paper-text" id="paperText">
           <span class="paper-cursor"></span>
         </div>
       </div>
     </div>
 
-    <!-- Transparent PNG typewriter — sits on top, overlaps paper bottom -->
-    <img class="tw-img" id="twImg" src="typewriter.png" alt="typewriter"
-      onload="initLayout()">
-
     <!-- Key flash labels -->
     <div class="key-flash"    id="keyFlash"></div>
     <div class="return-flash" id="returnFlash">⏎</div>
 
-    <!-- Transparent textarea covers paper area — triggers mobile keyboard -->
+    <!-- Transparent textarea — triggers mobile keyboard on tap anywhere on paper -->
     <textarea class="real-input" id="realInput"
       autocomplete="off" autocorrect="off" autocapitalize="off"
       spellcheck="false" inputmode="text"
       placeholder=""></textarea>
 
-    <!-- Click zone over keyboard -->
+    <!-- Click zone over keyboard area of image -->
     <div class="keyboard-zone" onclick="focusInput()"></div>
   </div>
 
@@ -511,35 +507,8 @@ body::after {
 // ─────────────────────────────────────────
 let fullText     = '';
 let selectedSeal = '💌';
-const LINE_H        = 24;   // px — matches CSS line-height on paper
-const CHARS_PER_LINE = 36;  // approx chars before line wraps
-// The typewriter PNG has machine body starting at 75.4% from top
-const TW_MACHINE_START = 0.754;
-
-// ─────────────────────────────────────────
-// Layout: size paper-area to match the
-// transparent zone of the typewriter PNG
-// ─────────────────────────────────────────
-function initLayout() {
-  const img    = document.getElementById('twImg');
-  const wrap   = document.getElementById('twWrap');
-  const paper  = document.getElementById('paperArea');
-  const input  = document.getElementById('realInput');
-
-  const imgH   = img.offsetHeight || img.naturalHeight;
-  const paperH = Math.round(imgH * TW_MACHINE_START);
-
-  paper.style.height = paperH + 'px';
-  input.style.bottom = (imgH * (1 - TW_MACHINE_START)) + 'px';
-  input.style.height = paperH + 'px';
-}
-
-// Run on load and on resize
-window.addEventListener('resize', () => {
-  if (document.getElementById('twImg').complete) initLayout();
-});
-// Also try immediately in case image is cached
-window.addEventListener('load', initLayout);
+const LINE_H         = 24;   // px — line-height on paper
+const CHARS_PER_LINE = 36;   // approx chars per line
 
 // ─────────────────────────────────────────
 // Audio
@@ -638,23 +607,21 @@ function showReturnFlash() {
 }
 
 // ─────────────────────────────────────────
-// Render — paper scrolls UP
+// Render — love-letter sheet scrolls UP
 // ─────────────────────────────────────────
 function renderText() {
-  const pt    = document.getElementById('paperText');
-  const strip = document.getElementById('paperStrip');
+  const pt  = document.getElementById('paperText');
+  const bg  = document.getElementById('paperBg');
 
-  // render text + cursor
   pt.innerHTML = escHtml(fullText) + '<span class="paper-cursor"></span>';
 
   const lines = countLines(fullText);
   document.getElementById('lineCounter').textContent =
-    lines <= 1 ? 'line 1' : 'line ' + lines;
+    lines <= 1 ? 'tap to begin typing' : 'line ' + lines;
 
-  // shift paper upward: each line pushes it up by LINE_H px
+  // Each new line slides the whole sheet UP by LINE_H px
   const shift = Math.max(0, (lines - 1) * LINE_H);
-  strip.style.paddingTop = (shift + 8) + 'px';
-  strip.style.transform  = `translateY(-${shift}px)`;
+  bg.style.transform = `translateY(-${shift}px)`;
 }
 
 function countLines(text) {
